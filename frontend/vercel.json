@@ -1,0 +1,25 @@
+{
+  "installCommand": "npm install --legacy-peer-deps",
+  "build": {
+    "env": {
+      "NPM_FLAGS": "--legacy-peer-deps"
+    }
+  },
+  "builds": [
+    {
+      "src": "client",
+      "use": "@vercel/vite"
+    },
+    {
+      "src": "server/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "outputFile": "dist/index.js"
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/dist/public/$1" }
+  ]
+}

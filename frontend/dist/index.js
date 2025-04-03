@@ -1,10 +1,10 @@
-// server/index.ts
+// api/index.ts
 import express2 from "express";
 
-// server/routes.ts
+// api/routes.ts
 import { createServer } from "http";
 
-// server/auth.ts
+// api/auth.ts
 import session from "express-session";
 import passport from "passport";
 import dotenv from "dotenv";
@@ -80,14 +80,14 @@ function setupAuth(app2) {
   });
 }
 
-// server/routes.ts
+// api/routes.ts
 function registerRoutes(app2) {
   setupAuth(app2);
   const httpServer = createServer(app2);
   return httpServer;
 }
 
-// server/vite.ts
+// api/vite.ts
 import express from "express";
 import fs from "fs";
 import path2, { dirname as dirname2 } from "path";
@@ -118,7 +118,7 @@ var vite_config_default = defineConfig({
   }
 });
 
-// server/vite.ts
+// api/vite.ts
 import { nanoid } from "nanoid";
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = dirname2(__filename2);
@@ -145,7 +145,7 @@ function serveStatic(app2) {
   });
 }
 
-// server/index.ts
+// api/index.ts
 var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
