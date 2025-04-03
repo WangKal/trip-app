@@ -7,10 +7,8 @@
     "dev": "cross-env NODE_ENV=development tsx api/index.ts",
     "build": "vite build && esbuild api/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "check": "tsc",
-    "overrides": {
-      "react-dom": "19.0.0"
-    }
+    "check": "tsc"
+    
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
