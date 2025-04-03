@@ -1,21 +1,13 @@
 {
   "builds": [
     {
-      "src": "client",
-      "use": "@vercel/vite",
-      "installCommand": "npm i --legacy-peer-deps"
-    },
-    {
       "src": "server/index.ts",
       "use": "@vercel/node",
-      "installCommand": "npm i --legacy-peer-deps",
-      "config": {
-        "outputFile": "dist/index.js"
-      }
+      "installCommand": "npm install --legacy-peer-deps"
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/dist/public/$1" }
-  ]
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "buildCommand": "npm run build"
 }
