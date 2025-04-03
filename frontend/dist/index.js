@@ -5,170 +5,12 @@ import express2 from "express";
 import { createServer } from "http";
 
 // server/auth.ts
-import session2 from "express-session";
+import session from "express-session";
 import passport from "passport";
 import dotenv from "dotenv";
 import { Strategy as LocalStrategy } from "passport-local";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-
-// shared/schema.ts
-import { mysqlTable as table, text, serial, int, timestamp, varchar } from "drizzle-orm/mysql-core";
-import { createInsertSchema } from "drizzle-zod";
-var governmentStructures = table("government_structures", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", 255).notNull(),
-  parentId: int("parent_id").references(() => governmentStructures.id, { onDelete: "cascade" }).default(null)
-});
-var branches = table("branches", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", 255).notNull(),
-  structureId: int("structure_id").references(() => governmentStructures.id, { onDelete: "cascade" })
-});
-var departments = table("departments", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", 255).notNull(),
-  structureId: int("structure_id").references(() => governmentStructures.id, { onDelete: "cascade" })
-});
-var facilities = table("facilities", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", 255).notNull(),
-  structureId: int("structure_id").references(() => governmentStructures.id, { onDelete: "cascade" }),
-  category: varchar("category", 255).notNull()
-  // e.g., 'hospital', 'huduma_center'
-});
-var users = table("users", {
-  id: int().primaryKey().autoincrement(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  governanceLevel: text("governance_level").notNull(),
-  role: text("role").notNull().default("user"),
-  departmentId: int()
-  // Only for admin users
-});
-var posts = table("posts", {
-  id: serial().primaryKey().autoincrement(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  structureId: int().notNull(),
-  departmentId: int(),
-  userId: int().notNull(),
-  type: text("type").notNull().default("suggestion"),
-  // suggestion or complaint
-  status: text("status").notNull().default("open"),
-  // open, in_progress, resolved
-  createdAt: timestamp("created_at").notNull().defaultNow()
-});
-var reactions = table("reactions", {
-  id: serial().primaryKey().autoincrement(),
-  postId: int().notNull(),
-  userId: int().notNull(),
-  type: text("type").notNull(),
-  // agree, neutral, against
-  reason: text("reason"),
-  createdAt: timestamp("created_at").notNull().defaultNow()
-});
-var insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  governanceLevel: true,
-  departmentId: true
-});
-var insertPostSchema = createInsertSchema(posts).pick({
-  title: true,
-  content: true,
-  structureId: true,
-  departmentId: true,
-  type: true
-});
-var insertReactionSchema = createInsertSchema(reactions).pick({
-  postId: true,
-  type: true,
-  reason: true
-});
-
-// server/storage.ts
-import { drizzle as drizzle2 } from "drizzle-orm/mysql2";
-import { eq } from "drizzle-orm";
-import session from "express-session";
-
-// server/db.ts
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
-var isOffline = !process.env.DATABASE_URL;
-var pool = mysql.createPool("mysql://root@localhost:3306/citizen_connect");
-var db = drizzle("mysql://root@localhost:3306/citizen_connect");
-
-// server/storage.ts
-import MySQLStore from "express-mysql-session";
-var MySQLSessionStore = MySQLStore(session);
-var db2 = drizzle2("mysql://root@localhost:3306/citizen_connect");
-var DatabaseStorage = class {
-  sessionStore;
-  constructor() {
-    this.sessionStore = new MySQLSessionStore({}, pool);
-  }
-  async getUser(id) {
-    const [user] = await db2.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-  async getUserByUsername(username) {
-    const [user] = await db2.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-  async createUser(insertUser) {
-    const [user] = await db2.insert(users).values(insertUser);
-    return user;
-  }
-  async getPosts(structureId) {
-    if (structureId) {
-      return db2.select().from(posts).where(eq(posts.structureId, structureId));
-    }
-    return db2.select().from(posts);
-  }
-  async createPost(insertPost) {
-    const [post] = await db2.insert(posts).values(insertPost).returning();
-    return post;
-  }
-  async getReactionsByPost(postId) {
-    return db2.select().from(reactions).where(eq(reactions.postId, postId));
-  }
-  async createReaction(insertReaction) {
-    const [reaction] = await db2.insert(reactions).values(insertReaction).returning();
-    return reaction;
-  }
-  /* async getStructures(parentId?: number): Promise<GovernmentStructure[]> {
-      if (parentId !== undefined) {
-        return db.select().from(governmentStructures).where(eq(governmentStructures.parentId, parentId));
-      }
-      return db.select().from(governmentStructures).where(eq(governmentStructures.parentId, null));
-    }
-  
-    async getDepartments(structureId: number): Promise<Department[]> {
-      return db.select().from(departments).where(eq(departments.structureId, structureId));
-    }*/
-  async getTopStructures() {
-    const t = await db2.select().from(governmentStructures);
-    console.log(t);
-    return t;
-  }
-  async getBranches(parentId) {
-    const br = await db2.select().from(branches).where(eq(branches.structureId, parentId));
-    return br;
-  }
-  async getDepartments(parentId) {
-    const dp = await db2.select().from(departments).where(eq(departments.structureId, parentId));
-    return dp;
-  }
-  async getDetailsByStructure(structureId) {
-    const br = await db2.select().from(branches).where(eq(branches.structureId, structureId));
-    const deps = await db2.select().from(departments).where(eq(departments.structureId, structureId));
-    return { branches: br, departments: deps };
-  }
-};
-var storage = new DatabaseStorage();
-
-// server/auth.ts
 dotenv.config();
 var scryptAsync = promisify(scrypt);
 async function hashPassword(password) {
@@ -186,13 +28,12 @@ function setupAuth(app2) {
   const sessionSettings = {
     secret: "secret_key",
     resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore
+    saveUninitialized: false
   };
   if (app2.get("env") === "production") {
     app2.set("trust proxy", 1);
   }
-  app2.use(session2(sessionSettings));
+  app2.use(session(sessionSettings));
   app2.use(passport.initialize());
   app2.use(passport.session());
   passport.use(
@@ -242,52 +83,6 @@ function setupAuth(app2) {
 // server/routes.ts
 function registerRoutes(app2) {
   setupAuth(app2);
-  app2.get("/api/posts", async (req, res) => {
-    const structureId = req.query.structureId ? parseInt(req.query.structureId) : void 0;
-    const posts2 = await storage.getPosts(structureId);
-    res.json(posts2);
-  });
-  app2.post("/api/posts", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const data = insertPostSchema.parse(req.body);
-    const post = await storage.createPost({
-      ...data,
-      userId: req.user.id
-    });
-    res.status(201).json(post);
-  });
-  app2.get("/api/posts/:postId/reactions", async (req, res) => {
-    const postId = parseInt(req.params.postId);
-    const reactions2 = await storage.getReactionsByPost(postId);
-    res.json(reactions2);
-  });
-  app2.post("/api/posts/:postId/reactions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const postId = parseInt(req.params.postId);
-    const data = insertReactionSchema.parse(req.body);
-    const reaction = await storage.createReaction({
-      ...data,
-      postId,
-      userId: req.user.id
-    });
-    res.status(201).json(reaction);
-  });
-  app2.get("/api/structures", async (req, res) => {
-    const structures = await storage.getTopStructures();
-    res.json(structures);
-  });
-  app2.get("/api/branches/:id", async (req, res) => {
-    const branches2 = await storage.getBranches(Number(req.params.id));
-    res.json(branches2);
-  });
-  app2.get("/api/departments/:id", async (req, res) => {
-    const departments2 = await storage.getDepartments(Number(req.params.id));
-    res.json(departments2);
-  });
-  app2.get("/api/structures/:id/details", async (req, res) => {
-    const details = await storage.getDetailsByStructure(Number(req.params.id));
-    res.json(details);
-  });
   const httpServer = createServer(app2);
   return httpServer;
 }

@@ -6,8 +6,6 @@ import { Strategy as LocalStrategy } from "passport-local";
 
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
@@ -35,7 +33,6 @@ export function setupAuth(app: Express) {
     secret: "secret_key",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
   };
 
   if (app.get("env") === "production") {
