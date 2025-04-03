@@ -1,15 +1,11 @@
-import express, { Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import express, { Request, Response, NextFunction } from 'express';
+import { registerRoutes } from './routes'; // Your existing routes
+import { serveStatic, log } from './vite'; // Serve static files (optional)
 
-// Create an instance of the express app
 const app = express();
-
-// Middleware to parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -21,16 +17,16 @@ app.use((req, res, next) => {
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
-  res.on("finish", () => {
+  res.on('finish', () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    if (path.startsWith('/api')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
       if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+        logLine = logLine.slice(0, 79) + '…';
       }
 
       log(logLine);
@@ -40,21 +36,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register routes and handle errors
 (async () => {
-  const server = registerRoutes(app);
+  const server = registerRoutes(app); // Register your routes here
 
-  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    const message = err.message || 'Internal Server Error';
     console.log(err);
     res.status(status).json({ message });
+    throw err;
   });
 
-  // Serve static assets if in development mode
+  // Serve static files (optional)
   serveStatic(app);
+
+  // Vercel dynamically sets the PORT environment variable
+  const port = process.env.PORT || 3000; // Default to 3000 in case PORT is not set
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
 })();
 
 // Export the app as a serverless function for Vercel
-export default app;
+module.exports = app;
