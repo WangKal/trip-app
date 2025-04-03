@@ -1,13 +1,13 @@
 {
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "npm run build",
   "builds": [
     {
-      "src": "server/index.ts",
-      "use": "@vercel/node",
-      "installCommand": "npm install --legacy-peer-deps"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
     }
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "buildCommand": "npm run build"
+  }
 }
