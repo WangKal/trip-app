@@ -11,7 +11,7 @@
       "use": "@vercel/vite"
     },
     {
-      "src": "server/index.ts",
+      "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
         "outputFile": "dist/index.js"
