@@ -56,8 +56,8 @@ console.log(err);
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
-  const PORT = process.env.PORT || 5000;
-server.listen(PORT, "0.0.0.0", () => {
-  log(`serving on port ${PORT}`);
+  const port = process.env.PORT || 5000; // Use Vercel's PORT or default to 5000
+  app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
 })();
