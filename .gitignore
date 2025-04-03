@@ -1,0 +1,21 @@
+# Node modules for React
+node_modules/
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+
+
+# Django settings and environment files
+*.log
+*.env
+
+# Other files that shouldn't be pushed
+.vscode/
+.DS_Store
+*.sqlite3
