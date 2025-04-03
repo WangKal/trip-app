@@ -1,14 +1,13 @@
 {
+  "installCommand": "npm install --legacy-peer-deps",
   "builds": [
     {
       "src": "client",
-      "use": "@vercel/vite",
-      "installCommand": "npm install --legacy-peer-deps"
+      "use": "@vercel/vite"
     },
     {
       "src": "server/index.ts",
       "use": "@vercel/node",
-      "installCommand": "npm install --legacy-peer-deps",
       "config": {
         "outputFile": "dist/index.js"
       }
