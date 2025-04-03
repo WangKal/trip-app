@@ -3,13 +3,13 @@
     {
       "src": "client",
       "use": "@vercel/vite",
-      "dest": "dist/public", // Vite will output here
+      "dest": "dist/public",
       "installCommand": "npm install --legacy-peer-deps"
     },
     {
       "src": "server/index.ts",
       "use": "@vercel/node",
-      "dest": "dist", // esbuild will output here
+      "dest": "dist",
       "installCommand": "npm install --legacy-peer-deps"
     }
   ],
