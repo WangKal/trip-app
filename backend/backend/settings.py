@@ -74,8 +74,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",  # Add this too if needed
+    "https://trip-app-edgarsamotieno-gmailcoms-projects.vercel.app",  # Add this too if needed
 ]
 
 CORS_ALLOW_CREDENTIALS = True
