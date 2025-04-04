@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://trip-app-m8ou.onrender.com";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
