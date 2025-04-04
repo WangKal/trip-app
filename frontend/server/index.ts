@@ -58,4 +58,4 @@ app.use((req, res, next) => {
 })();
 
 // Export the app as a serverless function for Vercel
-module.exports = app;
+export default app;

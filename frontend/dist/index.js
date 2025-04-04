@@ -1,10 +1,10 @@
-// api/index.ts
+// server/index.ts
 import express2 from "express";
 
-// api/routes.ts
+// server/routes.ts
 import { createServer } from "http";
 
-// api/auth.ts
+// server/auth.ts
 import session from "express-session";
 import passport from "passport";
 import dotenv from "dotenv";
@@ -80,21 +80,21 @@ function setupAuth(app2) {
   });
 }
 
-// api/routes.ts
+// server/routes.ts
 function registerRoutes(app2) {
   setupAuth(app2);
   const httpServer = createServer(app2);
   return httpServer;
 }
 
-// api/vite.ts
+// server/vite.ts
 import express from "express";
 import fs from "fs";
 import path2, { dirname as dirname2 } from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 
-// vite.config.ts
+// vite.config.mjs
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
@@ -118,7 +118,7 @@ var vite_config_default = defineConfig({
   }
 });
 
-// api/vite.ts
+// server/vite.ts
 import { nanoid } from "nanoid";
 var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = dirname2(__filename2);
@@ -145,7 +145,7 @@ function serveStatic(app2) {
   });
 }
 
-// api/index.ts
+// server/index.ts
 var app = express2();
 app.use(express2.json());
 app.use(express2.urlencoded({ extended: false }));
@@ -183,8 +183,9 @@ app.use((req, res, next) => {
     throw err;
   });
   serveStatic(app);
-  const PORT = 5e3;
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
+  const port = process.env.PORT || 3e3;
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
   });
 })();
+module.exports = app;
