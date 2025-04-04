@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-  "dev": "cross-env NODE_ENV=development vite", // Vite dev server for client
-  "build": "vite build", // Build client app
-  "start": "vite preview", // Preview the build (client-side)
-  "check": "tsc" // TypeScript check
+  "dev": "cross-env NODE_ENV=development vite",
+  "build": "vite build",
+  "start": "vite preview",
+  "check": "tsc"
 },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
