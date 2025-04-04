@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
-import { Building2, Users } from "lucide-react";
+import { Truck, Users } from "lucide-react";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -166,35 +166,36 @@ export default function AuthPage() {
       </div>
 
       {/* Right Section */}
-      <div className="hidden md:flex flex-col justify-center p-8 bg-primary text-primary-foreground">
-        <div className="max-w-md mx-auto space-y-6">
-          <h1 className="text-4xl font-bold">Citizen Engagement Platform</h1>
-          <p className="text-lg opacity-90">
-            Join our platform to engage with governance at all levels and make your
-            voice heard in the democratic process.
+<div className="hidden md:flex flex-col justify-center p-8 bg-primary text-primary-foreground">
+  <div className="max-w-md mx-auto space-y-6">
+    <h1 className="text-4xl font-bold">Trip Tracking & ELD Platform</h1>
+    <p className="text-lg opacity-90">
+      Manage your electronic logging device (ELD) records and visualize trip routes with real-time map tracking.
+    </p>
+    <div className="grid gap-4">
+      <div className="flex items-center gap-3">
+        <Truck className="h-8 w-8" />
+        <div>
+        <h3 className="font-semibold">Live Trip Mapping</h3>
+          <p className="opacity-90">
+            Visualize trip routes on interactive maps for better planning and monitoring.
           </p>
-          <div className="grid gap-4">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-8 w-8" />
-              <div>
-                <h3 className="font-semibold">Community Engagement</h3>
-                <p className="opacity-90">
-                  Share your views and participate in discussions.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8" />
-              <div>
-                <h3 className="font-semibold">Voice Your Opinion</h3>
-                <p className="opacity-90">
-                  Be part of decision-making processes.
-                </p>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
+      <div className="flex items-center gap-3">
+        <Users className="h-8 w-8" />
+        <div>
+          <h3 className="font-semibold">Automated ELD Logs</h3>
+          <p className="opacity-90">
+            Automatically track hours of service and log compliance records for every trip.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     </div>
   );
