@@ -73,9 +73,8 @@ MIDDLEWARE = [
     
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "https://trip-app-edgarsamotieno-gmailcoms-projects.vercel.app",  # Add this too if needed
-]
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 CORS_ALLOW_CREDENTIALS = True
 
