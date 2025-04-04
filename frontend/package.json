@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
-    "check": "tsc"
-  },
+  "dev": "cross-env NODE_ENV=development vite", // Vite dev server for client
+  "build": "vite build", // Build client app
+  "start": "vite preview", // Preview the build (client-side)
+  "check": "tsc" // TypeScript check
+},
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
