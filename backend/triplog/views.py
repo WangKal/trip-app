@@ -17,6 +17,8 @@ from decimal import Decimal, ROUND_DOWN
 import requests
 import json
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from triplog.scripts import create_trip_log_and_entries
 
 
 
@@ -419,6 +421,16 @@ def trip_end(request, trip_id):
         return JsonResponse({"message": "Trip ended successfully"}, status=200)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+@api_view(["GET"])
+def run_script(request, trip_id):
+    
+    if not trip_id:
+        return JsonResponse({'error': 'Trip ID is required'}, status=400)
+
+    create_trip_log_and_entries(trip_id)
+
+    return JsonResponse({'message': f'Logs added successfully for trip {trip_id}'}, status=200)
+
 
 def timedelta_to_decimal(td):
     """Converts timedelta to total hours as Decimal (5,2 format)"""

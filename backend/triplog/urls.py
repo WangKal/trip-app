@@ -4,7 +4,7 @@ from .views import (
     TripListCreateView, TripRetrieveUpdateDeleteView,
     LogEntryListCreateView, LogEntryRetrieveUpdateDeleteView, LogEntriesByTripLogView,
     TripCompletionCreateView, TripCompletionRetrieveView,
-    TripLogListCreateView, TripLogRetrieveUpdateDeleteView, TripLogByTripView, update_log_entry, trip_end, log_end,
+    TripLogListCreateView, TripLogRetrieveUpdateDeleteView, run_script, TripLogByTripView, update_log_entry, trip_end, log_end,
 )
 
 urlpatterns = [
@@ -23,6 +23,7 @@ urlpatterns = [
     path('logs/<int:pk>/', TripLogRetrieveUpdateDeleteView.as_view(), name='trip-log-detail'),
     path('trip/logs/<int:tripId>/', TripLogByTripView.as_view(), name='trip-log-by-trips'),
     path("logs/log-end", log_end, name="log-end"),
+    path('run-script/<int:trip_id>/', run_script, name='run_script'),
 
 
     #  Log Entries Routes
