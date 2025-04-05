@@ -61,17 +61,39 @@ const syncLogs = async () => {
   }
 };
 
+const sendFuelAlert = async (message = "Fuel level is low!") => {
+  console.log('hello');
+  const allClients = await self.clients.matchAll();
+  for (const client of allClients) {
+    client.postMessage({
+      type: 'fuel-alert',
+      message,
+    });
+  }
+};
+
 // Handle messages from App.tsx
 self.addEventListener('message', async (event) => {
   if (event.data && event.data.type === 'log') {
     const log = event.data.log;
+        // If a fuel alert is triggered
+   
 
     try {
-      await fetch(LOG_API_URL, {
+    const response =  await fetch(LOG_API_URL, {
         method: 'POST',
         body: JSON.stringify(log),
         headers: { 'Content-Type': 'application/json' },
       });
+        if (response.ok) {
+    const result = await response.json();
+
+    // If backend includes a fuel warning
+
+    if (result.fuel_warning) {
+      await sendFuelAlert(result.fuel_warning || "Fuel alert .");
+    }
+  }
     } catch (error) {
       console.warn('Offline: Saving log locally.');
       await saveLogOffline(log);

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 
 
@@ -119,7 +120,7 @@ class LogEntry(models.Model):
 
     log = models.ForeignKey(TripLog, on_delete=models.CASCADE, related_name="log_entries")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
-    start_time = models.DateTimeField(auto_now_add=True)
+    start_time = models.DateTimeField(null=True, blank=True, default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
     start_gps = models.JSONField(default=dict)  # {"lat": ..., "lon": ...}
     end_gps = models.JSONField(default=dict, null=True, blank=True)

@@ -1,36 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from "react-leaflet";
-import axios from "axios";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine";
+import axios from "axios";
 
-const getgps_location = () => new Promise((resolve) => setTimeout(() => resolve("37.7749, -122.4194"), 1000));
+const getgps_location = () =>
+  new Promise((resolve) =>
+    setTimeout(() => resolve("0.3204, 36.0056"), 1000)
+  ); // Simulate GPS
 
 export function LocationForm({ form, nextStep }) {
+  const mapRef = useRef(null);
+  const routingControlRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState({ address: "", lat: null, lng: null });
   const [to, setTo] = useState({ address: "", lat: null, lng: null });
-  const [route, setRoute] = useState([]);
   const [suggestions, setSuggestions] = useState({ from: [], to: [] });
-
-  useEffect(() => {
-    getgps_location().then((gps) => {
-      const [lat, lng] = gps.split(", ").map(Number);
-      fetchAddressFromGPS(lat, lng, setFrom);
-      setLoading(false);
-    });
-  }, []);
-
-  useEffect(() => {
-    fetchRoute();
-       
-  }, [from, to]);
-    useEffect(() => {
-     form.setValue("from_location", from); 
-       form.setValue("to_location", to);
-  }, [from, to, form]);
 
   const fetchAddressFromGPS = async (lat, lng, setLocation) => {
     try {
@@ -43,30 +37,66 @@ export function LocationForm({ form, nextStep }) {
     }
   };
 
-  const fetchRoute = async () => {
-  if (from.lat && from.lng && to.lat && to.lng) {
-    try {
-      const res = await axios.get(
-        `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}`,
-        { params: { overview: "full", geometries: "geojson" } }
-      );
+  const parseLocation = (location) => {
+    if (!location) return null;
+    const [lat, lng] = location.split(",").map(Number);
+    return { lat, lng };
+  };
 
-      console.log("Route Response:", res.data);
+  useEffect(() => {
+    getgps_location().then((gps) => {
+      const { lat, lng } = parseLocation(gps);
+      fetchAddressFromGPS(lat, lng, setFrom);
+      setLoading(false);
+    });
+  }, []);
 
-      if (res.data.routes.length > 0) {
-        const routeCoordinates = res.data.routes[0].geometry.coordinates.map(
-          ([lng, lat]) => [lat, lng] // Ensure correct order for Leaflet
-        );
-        setRoute(routeCoordinates);
-      } else {
-        console.error("No route found");
+  useEffect(() => {
+    form.setValue("from_location", from);
+    form.setValue("to_location", to);
+  }, [from, to, form]);
+
+  const initMap = () => {
+    const map = L.map("leaflet-map").setView([0.3204, 36.0056], 7);
+    mapRef.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+      fetchAddressFromGPS(lat, lng, setFrom);
+    });
+  };
+
+  useEffect(() => {
+    if (!mapRef.current) initMap();
+  }, []);
+
+  useEffect(() => {
+    if (
+      mapRef.current &&
+      from.lat &&
+      from.lng &&
+      to.lat &&
+      to.lng
+    ) {
+      if (routingControlRef.current) {
+        mapRef.current.removeControl(routingControlRef.current);
       }
-    } catch (error) {
-      console.error("Error fetching route:", error);
-    }
-  }
-};
 
+      routingControlRef.current = L.Routing.control({
+        waypoints: [
+          L.latLng(from.lat, from.lng),
+          L.latLng(to.lat, to.lng),
+        ],
+        routeWhileDragging: true,
+        showAlternatives: false,
+        addWaypoints: false,
+      }).addTo(mapRef.current);
+    }
+  }, [from, to]);
 
   const handleGeocode = async (query, setLocation, type) => {
     try {
@@ -82,95 +112,95 @@ export function LocationForm({ form, nextStep }) {
   };
 
   const selectSuggestion = (item, setLocation, type) => {
-    setLocation({ address: item.display_name, lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
+    const lat = parseFloat(item.lat);
+    const lng = parseFloat(item.lon);
+    setLocation({ address: item.display_name, lat, lng });
     setSuggestions((prev) => ({ ...prev, [type]: [] }));
-  };
-
-  const LocationMarker = ({ setLocation }) => {
-    useMapEvents({
-      click(e) {
-        const { lat, lng } = e.latlng;
-        fetchAddressFromGPS(lat, lng, setLocation);
-      },
-    });
-    return null;
   };
 
   return (
     <div>
       <h2 className="text-xl mb-4">Step 1: Set Locations</h2>
 
-      <FormField control={form.control} name="from_location" render={({ field }) => (
-        <FormItem>
-          <FormLabel>From Location</FormLabel>
-          <FormControl>
-            <div>
-              <Input
-                placeholder="From location"
-                {...field}
-                value={from.address}
-                onChange={(e) => {
-                  setFrom({ ...from, address: e.target.value });
-                  handleGeocode(e.target.value, setFrom, "from");
-                }}
-                required
-              />
-              {suggestions.from.length > 0 && (
-                <ul className="bg-white border max-h-40 overflow-y-auto">
-                  {suggestions.from.map((item) => (
-                    <li key={item.place_id} onClick={() => selectSuggestion(item, setFrom, "from")}>
-                      {item.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
+      <FormField
+        control={form.control}
+        name="from_location"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>From Location</FormLabel>
+            <FormControl>
+              <div>
+                <Input
+                  placeholder="From location"
+                  value={from.address}
+                  onChange={(e) => {
+                    setFrom({ ...from, address: e.target.value });
+                    handleGeocode(e.target.value, setFrom, "from");
+                  }}
+                  required
+                />
+                {suggestions.from.length > 0 && (
+                  <ul className="bg-white border max-h-40 overflow-y-auto z-10 relative">
+                    {suggestions.from.map((item) => (
+                      <li
+                        key={item.place_id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => selectSuggestion(item, setFrom, "from")}
+                      >
+                        {item.display_name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-      <FormField control={form.control} name="to_location" render={({ field }) => (
-        <FormItem>
-          <FormLabel>To Location</FormLabel>
-          <FormControl>
-            <div>
-              <Input
-                placeholder="To location"
-                {...field}
-                value={to.address}
-                onChange={(e) => {
-                  setTo({ ...to, address: e.target.value });
-                  handleGeocode(e.target.value, setTo, "to");
-                }}
-                required
-              />
-              {suggestions.to.length > 0 && (
-                <ul className="bg-white border max-h-40 overflow-y-auto">
-                  {suggestions.to.map((item) => (
-                    <li key={item.place_id} onClick={() => selectSuggestion(item, setTo, "to")}>
-                      {item.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
+      <FormField
+        control={form.control}
+        name="to_location"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>To Location</FormLabel>
+            <FormControl>
+              <div>
+                <Input
+                  placeholder="To location"
+                  value={to.address}
+                  onChange={(e) => {
+                    setTo({ ...to, address: e.target.value });
+                    handleGeocode(e.target.value, setTo, "to");
+                  }}
+                  required
+                />
+                {suggestions.to.length > 0 && (
+                  <ul className="bg-white border max-h-40 overflow-y-auto z-10 relative">
+                    {suggestions.to.map((item) => (
+                      <li
+                        key={item.place_id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => selectSuggestion(item, setTo, "to")}
+                      >
+                        {item.display_name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-      <div className="h-64 w-full border rounded">
-        <MapContainer center={[0.0236, 37.9062]} zoom={6} style={{ height: "100%", width: "100%" }}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
-          {from.lat && <Marker position={[from.lat, from.lng]} />}
-          {to.lat && <Marker position={[to.lat, to.lng]} />}
-          <LocationMarker setLocation={setFrom} />
-          {route.length > 0 && <Polyline positions={route} color="blue" />}
-        </MapContainer>
-      </div>
+      <div id="leaflet-map" className="w-full h-64 border rounded my-4"></div>
 
-      <Button onClick={nextStep} disabled={loading}>{loading ? "Getting GPS..." : "Next"}</Button>
+      <Button onClick={nextStep} disabled={loading}>
+        {loading ? "Getting GPS..." : "Next"}
+      </Button>
     </div>
   );
 }

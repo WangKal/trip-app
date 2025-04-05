@@ -116,7 +116,7 @@ class LogoutView(APIView):
 
  # Trip CRUD
 class TripListCreateView(generics.ListCreateAPIView):
-    queryset = Trip.objects.all()
+    queryset = Trip.objects.all().order_by('-created_at')
     serializer_class = TripSerializer
 
 class TripRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -170,7 +170,7 @@ class TripLogListCreateView(generics.ListCreateAPIView):
 
 #  Delete TripLog and its related LogEntries
 class TripLogRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = TripLog.objects.all()
+    queryset = TripLog.objects.all().order_by('-created_at')
     serializer_class = TripLogSerializer
 
     def perform_destroy(self, instance):
@@ -204,28 +204,28 @@ def update_trip_log(log_id):
         log_entries.filter(status="off_duty")
         .annotate(duration=duration_expr)
         .aggregate(Sum("duration"))["duration__sum"]
-        or 0
+        or timedelta()
     )
 
     total_sleeper_hours = (
         log_entries.filter(status="sleeper")
         .annotate(duration=duration_expr)
         .aggregate(Sum("duration"))["duration__sum"]
-        or 0
+        or timedelta()
     )
 
     total_driving_hours = (
         log_entries.filter(status="driving")
         .annotate(duration=duration_expr)
         .aggregate(Sum("duration"))["duration__sum"]
-        or 0
+        or timedelta()
     )
 
     total_on_duty_hours = (
         log_entries.filter(status="on_duty")
         .annotate(duration=duration_expr)
         .aggregate(Sum("duration"))["duration__sum"]
-        or 0
+        or timedelta()
     )
     # Calculate miles driven today
     total_miles_driving_today = log_entries.filter(status="driving").aggregate(Sum("mileage"))["mileage__sum"] or 0
@@ -258,7 +258,7 @@ def update_trip_log(log_id):
     #  Available Hours Tomorrow (Assuming 70-hour max rule)
     max_hours_per_week = 70
     available_hours_tomorrow = max(0, max_hours_per_week - on_duty_last_7_days)
-
+    
 
     #  Update or create TripLog
     trip_log, created = TripLog.objects.update_or_create(
@@ -318,13 +318,19 @@ def update_log_entry(request):
     except ValueError:
         return Response({"error": "Invalid timestamp format"}, status=400)
 
+    trip = log.trip
     log_entries = LogEntry.objects.filter(log=log)
     last_entry = log_entries.last()
+    fuel_message = None
 
     if last_entry:
+        distance = get_road_distance(last_entry.end_gps, gps)
+        #Update the Trip (not TripLog) total_mileage
+        trip.total_mileage += Decimal(str(distance))
+        trip.save()            
+
         if last_entry.status == new_status:
             # Status unchanged → Update GPS and mileage
-            distance = get_road_distance(last_entry.end_gps, gps)
             last_entry.mileage += distance
             last_entry.end_gps = gps
             last_entry.save()
@@ -352,7 +358,17 @@ def update_log_entry(request):
             mileage=0.0
         )
     update_trip_log(log_id)
-    return Response({"message": "Log entry updated successfully!"}, status=200)
+    remainder = float(trip.total_mileage % 1000)
+    if remainder >= 995:
+        next_station = (int(trip.total_mileage / 1000) + 1) * 1000
+        fuel_message = f"Fuel station in the next {next_station - float(trip.total_mileage):.1f} km"
+
+    response_data = {"message": "Log entry updated successfully!"}
+
+    if fuel_message:
+        response_data["fuel_warning"] = fuel_message
+
+    return Response(response_data, status=200)
 
 @api_view(["POST"])
 def log_end(request):
@@ -378,12 +394,27 @@ def log_end(request):
 @api_view(["POST"])
 def trip_end(request, trip_id):
     if request.method == "POST":
-    
-        # Update the Trip model
-        updated_rows = Trip.objects.filter(id=trip_id).update(status="completed")
-
-        if updated_rows == 0:
+        try:
+            trip = Trip.objects.get(id=trip_id)
+        except Trip.DoesNotExist:
             return JsonResponse({"error": "Trip not found"}, status=404)
+
+        # Get the previous completed trip and accumulate mileage
+        previous_trip = (
+            Trip.objects
+            .filter(status="completed")
+            .exclude(id=trip.id)  # Ensure we're not referencing the current trip
+            .order_by("-end_time")  # Use end_time or any other field that signifies trip end
+            .first()  # Get the most recent completed trip
+        )
+
+        # Add previous trip mileage to the current trip's total_mileage
+        if previous_trip:
+            trip.total_mileage += previous_trip.total_mileage
+
+        # Mark the trip as completed
+        trip.status = "completed"
+        trip.save()
 
         return JsonResponse({"message": "Trip ended successfully"}, status=200)
 
@@ -391,6 +422,8 @@ def trip_end(request, trip_id):
 
 def timedelta_to_decimal(td):
     """Converts timedelta to total hours as Decimal (5,2 format)"""
+    
+
     total_seconds = td.total_seconds()  # Convert timedelta to seconds
     total_hours = total_seconds / 3600  # Convert seconds to hours
     return Decimal(total_hours).quantize(Decimal("0.00"), rounding=ROUND_DOWN)

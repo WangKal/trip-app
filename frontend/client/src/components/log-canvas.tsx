@@ -121,12 +121,12 @@ const year = trip_date[0];
     ctx.strokeRect(440, 80, 300, 30);
 
     // Mileage and Carrier Info
-    drawText(`Total Miles Driving Today  ${tripDetails?.total_miles_driving_today}`, 20, 160, false, 200);
-    drawText(`${tripDetails?.total_miles_driving_today}`, 30, 190, false, 400);
+    drawText(`Total Miles Driving Today`, 20, 160, false, 200);
+    drawText(`${logDetails?.total_miles_driving_today}`, 30, 190, false, 400);
     
     ctx.strokeRect(20, 170, 200, 30);
     drawText(`Total Mileage Today  `, 250, 160, false, 200);
-     drawText(`${tripDetails?.total_miles_today}`, 260, 190, false, 400);
+     drawText(`${logDetails?.total_miles_today}`, 260, 190, false, 400);
     
     ctx.strokeRect(250, 170, 200, 30);
     drawText(`Name of Carrier or Carriers ${tripDetails?.carrier_name}`, 500, 160, false, 200);
@@ -135,7 +135,7 @@ const year = trip_date[0];
     ctx.strokeRect(500, 170, 400, 30);
 
     // Truck and Address
-    drawText(`Truck/Tractor and Trailer Numbers ${tripDetails?.truck_number}/${tripDetails?.trailer_number}`, 20, 220, false, 200);
+    drawText(`Truck/Tractor and Trailer Numbers `, 20, 220, false, 200);
     drawText(` ${tripDetails?.truck_number}/${tripDetails?.trailer_number}`, 30, 250, false, 200);
     
     ctx.strokeRect(20, 230, 400, 30);
@@ -251,22 +251,50 @@ const drawWrappedText = (text, x, y, maxWidth, lineHeight) => {
        
       const x2 = timeToX(formatTime(end_time)); 
 
-      // Draw main log line
-      ctx.beginPath();
-      ctx.moveTo(x1, y + 25);
-      ctx.lineTo(x2, y + 25);
-      ctx.strokeStyle = status === "driving" ? "red" : "black";
-      ctx.lineWidth = 3;
-      ctx.stroke();
+  // Draw the main log line
+  ctx.beginPath();
+  ctx.moveTo(x1, y + 25);
+  ctx.lineTo(x2, y + 25);
+  ctx.strokeStyle = status === "driving" ? "red" : "black";
+  ctx.lineWidth = 3;
+  ctx.stroke();
 
-      // Draw transition lines
-      if (previousEntry && previousEntry.status !== status) {
-        const yPrev = statusToY[previousEntry.status] + 25;
-        ctx.beginPath();
-        ctx.moveTo(x1, yPrev);
-        ctx.lineTo(x1, y + 25);
-        ctx.stroke();
-      }
+  
+  // Adjust the vertical transition lines
+  if (previousEntry === null) {
+    // First entry, start from the baseline
+    const yPrev = gridTop; // Start from the baseline for the first entry
+
+    // Draw the initial vertical line from the baseline to the first entry's start
+    ctx.beginPath();
+    ctx.moveTo(x1, yPrev); // Start from baseline
+    ctx.lineTo(x1, y + 25); // Draw vertical line to the first entry's start
+    ctx.stroke();
+
+    // Optional: Draw a transition from the first log entry's end to the next entry's start
+    ctx.beginPath();
+    ctx.moveTo(x2, y + 25); // Connect from the first entry's end
+    ctx.lineTo(x2, yPrev + 75); // Adjust the vertical length for the next entry
+    ctx.stroke();
+
+  } else {
+    // For subsequent entries, calculate the position of the vertical line dynamically
+    const yPrev = statusToY[previousEntry.status] + 25; // Position of the previous entry
+
+    // Draw vertical line connecting from the previous entry's end to the current entry's start
+    ctx.beginPath();
+    ctx.moveTo(x1, yPrev); // Connect from the previous entry's end
+    ctx.lineTo(x1, y + 25); // Draw to the current entry's start
+    ctx.stroke();
+
+    // Optional: Add a vertical line at the end to the next entry
+    ctx.beginPath();
+    ctx.moveTo(x2, yPrev); // Connect from the previous entry's end
+    ctx.lineTo(x2, y + 25); // Draw to the current entry's start
+    ctx.stroke();
+  }
+
+
     // Draw remarks section
     const drawRemarksSection = () => {
      

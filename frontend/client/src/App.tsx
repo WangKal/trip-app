@@ -3,6 +3,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import NotFound from "@/pages/not-found";
@@ -21,6 +22,7 @@ import AuthPage from "@/pages/auth-page";
 
 function Router() {
   const [location] = useLocation();
+
   const hideBottomNav = location === "/auth"; // Hide BottomNav on auth page
 
   return (
@@ -58,7 +60,7 @@ function Router() {
 }
 const registerServiceWorker = () => {
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
-    navigator.serviceWorker.register('./service-worker.js')
+    navigator.serviceWorker.register('/service-worker.js')
       .then((registration) => {
         console.log('Service Worker Registered:', registration);
        /* navigator.serviceWorker.ready.then((sw) => {
@@ -69,7 +71,7 @@ const registerServiceWorker = () => {
   }
 };
 function App() {
-
+const { toast } = useToast();
    useEffect(() => {
   registerServiceWorker();
 
@@ -106,6 +108,16 @@ function App() {
         console.error("Geolocation error:", error);
       }
     );
+  });
+
+    navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type === "fuel-alert") {
+      toast({
+        title: "Fuel Alert",
+        description: event.data.message || "Low fuel level detected!",
+        variant: "destructive", // optional, if you have variants like error
+      });
+    }
   });
 
  
