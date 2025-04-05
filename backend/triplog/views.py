@@ -406,7 +406,7 @@ def trip_end(request, trip_id):
             Trip.objects
             .filter(status="completed")
             .exclude(id=trip.id)  # Ensure we're not referencing the current trip
-            .order_by("-end_time")  # Use end_time or any other field that signifies trip end
+            .order_by("-created_at")  # Use end_time or any other field that signifies trip end
             .first()  # Get the most recent completed trip
         )
 
