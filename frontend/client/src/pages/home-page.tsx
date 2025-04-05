@@ -262,7 +262,7 @@ const STATUS_CHOICES = [
 <div className="bg-white shadow-lg rounded-lg p-6 flex flex-wrap items-center justify-between">
   <div>
     <h2 className="text-3xl font-semibold text-gray-800">
-      Welcome, {fullname}!
+      Welcome!
     </h2>
     <p className="text-gray-600 mt-2">
       Stay compliant and track your trips effortlessly.
